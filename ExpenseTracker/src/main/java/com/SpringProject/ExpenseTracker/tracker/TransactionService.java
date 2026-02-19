@@ -23,28 +23,25 @@ public class TransactionService {
 
 @Transactional
     public ResponseEntity<Transaction> save(String id , Transaction transaction) {
-        User user = userRepository.findById(id).orElse(null);
-        transaction.setUserid(id);
-        transaction.setTime(LocalDateTime.now());
+    User user = userRepository.findById(id).orElse(null);
+    transaction.setUserid(id);
+    transaction.setTime(LocalDateTime.now());
+    int currentBalance = user.getCurrent_balance();
+    int amount = transaction.getAmount();
+    if(amount>currentBalance){
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+    else {
+        user.setCurrent_balance(currentBalance - amount);
+        userRepository.save(user);
         int currentBalance1 = user.getCurrent_balance();
-        if(currentBalance1>0) {
-            int currentBalance = user.getCurrent_balance();
-            int amount = transaction.getAmount();
-            transaction.setBalance(currentBalance - amount);
-            user.setCurrent_balance(transaction.getBalance());
-            userRepository.save(user);
-            int currentBalance2 = user.getCurrent_balance();
-            if (currentBalance2 < currentBalance1 && currentBalance2 > 0) {
-                transactionRepository.save(transaction);
-                return new ResponseEntity<>(HttpStatus.OK);
-            }else{
+        transaction.setBalance(currentBalance1);
+        transactionRepository.save(transaction);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
-                throw new RuntimeException();
 
-            }
-        }else{
-            throw new RuntimeException();
-        }
+
 
     }
 public List<Transaction> getall(String id){
